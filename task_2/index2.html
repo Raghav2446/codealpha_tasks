@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini WhatsApp+ Enhanced with Download</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ece5dd;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      background-color: #075e54;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      position: relative;
+      opacity: 0;
+      animation: fadeIn 1s forwards 0.5s;
+    }
+
+    .logout-btn {
+      position: absolute;
+      right: 10px;
+      top: 12px;
+      padding: 5px 10px;
+      border: none;
+      background: #d32f2f;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      opacity: 0;
+      animation: fadeIn 1s forwards 1s;
+    }
+
+    .chat-container {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      animation: slideIn 1s forwards 1s;
+    }
+
+    .message {
+      max-width: 60%;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 10px;
+      line-height: 1.4em;
+      position: relative;
+      font-size: 14px;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+
+    .you { background-color: #dcf8c6; align-self: flex-end; }
+    .friend { background-color: white; align-self: flex-start; }
+
+    .timestamp {
+      font-size: 10px;
+      color: #777;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .seen {
+      font-size: 10px;
+      color: #25d366;
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+      gap: 5px;
+      flex-wrap: wrap;
+      animation: fadeIn 1s forwards 2s;
+    }
+
+    .input-area input, .input-area button, .input-area select {
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .input-area input { flex: 1; }
+    .input-area button {
+      background-color: #25d366;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .input-area button:hover { background-color: #1ebd5b; }
+
+    .login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      padding: 30px;
+      animation: fadeIn 1s forwards 2s;
+    }
+
+    .login-screen input {
+      padding: 10px;
+      width: 200px;
+      margin: 10px;
+      border-radius: 20px;
+      border: 1px solid #aaa;
+    }
+
+    .login-screen button {
+      padding: 10px 20px;
+      border: none;
+      background: #25d366;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .login-screen button:hover {
+      background-color: #1ebd5b;
+    }
+
+    .input-area input[type="file"] {
+      display: none;
+    }
+
+    .image-preview {
+      max-width: 100px;
+      margin-top: 5px;
+    }
+
+    .file-preview {
+      max-width: 200px;
+      margin-top: 5px;
+    }
+
+    .download-btn {
+      background: #2196f3;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.3s ease;
+    }
+
+    .download-btn:hover {
+      background-color: #1976d2;
+    }
+
+    @media (max-width: 600px) {
+      .message { max-width: 80%; }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header" id="header">
+    Sasta Social Media 
+    <button class="logout-btn" onclick="logout()" style="display:none;" id="logoutBtn">Logout</button>
+  </div>
+
+  <div id="loginScreen" class="login-screen">
+    <h2>My Chatterbox</h2>
+    <p>Please enter your name to start chatting</p>
+    <input type="text" id="usernameInput" placeholder="Your name">
+    <input type="password" id="passwordInput" placeholder="Password (1234)">
+    <button onclick="login()">Enter Chat</button>
+  </div>
+
+  <div id="chatApp" style="display: none; flex: 1; flex-direction: column;">
+    <div class="chat-container" id="chatBox"></div>
+    <form class="input-area" id="chatForm">
+      <select id="sender">
+        <option value="you">You</option>
+        <option value="friend">Friend</option>
+      </select>
+      <input type="text" id="messageInput" placeholder="Type a message..." required>
+      <input type="file" id="fileInput" onchange="previewFile(event)">
+      <button type="submit">Send</button>
+    </form>
+    <img id="imagePreview" class="image-preview" style="display: none;" />
+    <button id="downloadBtn" class="download-btn" style="display:none;" onclick="downloadImage()">Download Image</button>
+    <button onclick="exportChat()">Export Chat</button>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const senderSelect = document.getElementById('sender');
+    const messageInput = document.getElementById('messageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const loginScreen = document.getElementById('loginScreen');
+    const chatApp = document.getElementById('chatApp');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const fileInput = document.getElementById('fileInput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const passwordInput = document.getElementById('passwordInput');
+
+    function formatTime(date) {
+      const h = date.getHours().toString().padStart(2, '0');
+      const m = date.getMinutes().toString().padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function loadMessages() {
+      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+      chatBox.innerHTML = '';
+      messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `message ${msg.sender}`;
+        div.innerHTML = `
+          <b>${msg.sender === 'you' ? localStorage.getItem('username') : 'Friend'}</b>: ${msg.text}
+          <div class="timestamp">${msg.time}</div>
+          ${msg.sender === 'you' ? '<span class="seen">✓✓</span>' : ''}
+          ${msg.image ? `<img src="${msg.image}" class="file-preview" />` : ''}
+          ${msg.file ? `<a href="${msg.file}" download class="file-preview">${msg.file.split('/').pop()}</a>` : ''}
+        `;
+        chatBox.appendChild(div);
+        div.style.animation = 'fadeIn 0.5s forwards';
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const sender = senderSelect.value;
+      const text = messageInput.value.trim();
+      const image = imagePreview.src;
+      const file = fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : '';
+
+      if (!text && !image && !file) return;
+
+      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+      const newMsg = {
+        sender,
+        text,
+        image,
+        file,
+        time: formatTime(new Date())
+      };
+      messages.push(newMsg);
+      localStorage.setItem('messages', JSON.stringify(messages));
+
+      messageInput.value = '';
+      imagePreview.style.display = 'none';
+      fileInput.value = '';
+      loadMessages();
+
+      if (sender === 'friend') {
+        setTimeout(() => {
+          const botReply = {
+            sender: 'you',
+            text: '🤖 Auto-reply: Message received!',
+            time: formatTime(new Date())
+          };
+          const updated = JSON.parse(localStorage.getItem('messages'));
+          updated.push(botReply);
+          localStorage.setItem('messages', JSON.stringify(updated));
+          loadMessages();
+        }, 800);
+      }
+    });
+
+    function previewFile(event) {
+      const file = event.target.files[0];
+      if (file) {
+        if (file.type.startsWith('image')) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            imagePreview.style.display = 'block';
+            imagePreview.src = e.target.result;
+            downloadBtn.style.display = 'inline';
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+
+    function downloadImage() {
+      const link = document.createElement('a');
+      link.href = imagePreview.src;
+      link.download = 'image.jpg';
+      link.click();
+    }
+
+    function login() {
+      const name = document.getElementById('usernameInput').value.trim();
+      const password = passwordInput.value.trim();
+      if (name === '' || password !== '1234') return alert('Invalid password or name!');
+      localStorage.setItem('username', name);
+      showChat();
+    }
+
+    function logout() {
+      if (confirm('Logout and clear username?')) {
+        localStorage.removeItem('username');
+        location.reload();
+      }
+    }
+
+    function showChat() {
+      loginScreen.style.display = 'none';
+      chatApp.style.display = 'flex';
+      logoutBtn.style.display = 'inline';
+      loadMessages();
+    }
+
+    function exportChat() {
+      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+      let chatContent = '';
+      messages.forEach(msg => {
+        chatContent += `${msg.sender === 'you' ? localStorage.getItem('username') : 'Friend'}: ${msg.text}\n`;
+        chatContent += `Time: ${msg.time}\n\n`;
+      });
+      const blob = new Blob([chatContent], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'chat.txt';
+      link.click();
+    }
+
+    // Auto login if name is stored
+    if (localStorage.getItem('username')) {
+      showChat();
+    }
+  </script>
+
+</body>
+</html>
