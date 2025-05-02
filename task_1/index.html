@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Raghav ki dukaan</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>RAGHAV NATURAL STORE</header>
+
+  <div class="container">
+    <h2>Products</h2>
+    <div class="products" id="product-list"></div>
+
+    <h2>Your Cart</h2>
+    <div class="cart" id="cart-list"></div>
+    <div class="total" id="total">Total: $0.00</div>
+
+    <div class="checkout-section">
+      <h2>Delivery & Payment</h2>
+      <input type="text" id="address" placeholder="Enter Delivery Address" required>
+      <select id="payment-method">
+        <option value="Cash on Delivery">Cash on Delivery</option>
+        <option value="Online Payment">Online Payment</option>
+      </select>
+      <button onclick="checkout()">Place Order</button>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 your's Cart. powered by sir raghav.
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
